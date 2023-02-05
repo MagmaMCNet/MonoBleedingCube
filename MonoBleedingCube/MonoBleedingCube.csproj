@@ -1,0 +1,63 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFrameworks>net472</TargetFrameworks>
+    <Optimize>true</Optimize>
+    <ApplicationIcon>cube.ico</ApplicationIcon>
+    <Copyright>Copyright © 2023</Copyright>
+    <PackageIcon>cube.png</PackageIcon>
+    <NeutralLanguage>en-150</NeutralLanguage>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <Authors>MagmaMc</Authors>
+    <UseWindowsForms>true</UseWindowsForms>
+    <StartupObject>MonoBleedingCube.MonoBleedingCube</StartupObject>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <PlatformTarget>x64</PlatformTarget>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Cube.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="cube.ico" />
+  </ItemGroup>
+
+
+  <ItemGroup>
+    <None Include="bin\Debug\net48\Add MSC.reg" />
+    <None Include="cube.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Costura.Fody" Version="5.8.0-alpha0098">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="MagmaMc.GDI" Version="0.3.0" />
+    <PackageReference Include="MagmaMc.JEF" Version="3.3.1" />
+    <PackageReference Include="MagmaMc.MagmaSimpleConfig" Version="0.2.12" />
+    <PackageReference Include="Pastel" Version="4.1.0" />
+    <PackageReference Include="Spectre.Console" Version="0.46.1-preview.0.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Resources.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+
+</Project>
