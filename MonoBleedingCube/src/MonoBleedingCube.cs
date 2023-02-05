@@ -36,34 +36,37 @@ namespace MonoBleedingCube
         public static void Main(string[] ConsoleArgs) =>
             new MonoBleedingCube().StartMain(ConsoleArgs);
 
+        static ScreenRenderer Renderer = new ScreenRenderer();
         static IntPtr ConsoleWindow = JEF.GetConsoleWindow();
-        static Debugger Debugger = new Debugger();
         static SimpleConfig Config = new SimpleConfig("MBC.MSC");
-
+        static Files Files;
         public void StartMain(string[] ConsoleArgs)
         {
-            JEF.Windows.RestoreWindow(JEF.GetConsoleWindow());
             Console.CursorVisible = false;
             Console.SetWindowSize(150, 32);
             ConfigSetup();
+            Files = new Files(Config);
+            Files.Setup();
 
-            if (!(bool)Config.GetValue("DevMode", true, "MonoBleedingCube"))
-                JEF.Windows.HideWindow(JEF.GetConsoleWindow());
-
+            // Main
             SetTitle("MonoBleedingCube", Color.Orange3);
 
-            string Data = (string)Config.GetValue("AppName", Section: "MonoBleedingCube") + "_Data\\MonoBleedingCube-Data\\";
-            Files.Setup((string)Config.GetValue("AppName", Section: "MonoBleedingCube"));
+            JEF.Windows.RestoreWindow(ConsoleWindow);
+            if (!(bool)Config.GetValue("DevMode", true, "MonoBleedingCube"))
+                JEF.Windows.HideWindow(ConsoleWindow);
+
+
             if ((bool)Config.GetValue("DevMode", true, "MonoBleedingCube"))
                 DevelopmentMode();
+
             Process process = new Process();
             process.StartInfo = new ProcessStartInfo((string)Config.GetValue("AppName", Section: "MonoBleedingCube"));
+
             float sizeX = (float)Config.GetValue("SplashWidth", 1, "MonoBleedingCube");
             float sizeY = (float)Config.GetValue("SplashHeight", 1, "MonoBleedingCube");
-            ScreenRenderer Renderer = new ScreenRenderer();
             try
             {
-                Bitmap BitmapImage = (Bitmap)Image.FromFile(Data + "Splash.png");
+                Bitmap BitmapImage = (Bitmap)Image.FromFile(Files.Dir + "Splash.png");
                 Renderer.StartRender();
                 BitmapImage.SetResolution(sizeX * BitmapImage.HorizontalResolution, sizeY * BitmapImage.VerticalResolution);
                 for (int i = 0; i < 10; i++)
@@ -76,21 +79,23 @@ namespace MonoBleedingCube
             catch { }
             Task.Run(() =>
             {
-                Bitmap BitmapImage = (Bitmap)Image.FromFile(Data + "Splash.png");
+                Bitmap BitmapImage = (Bitmap)Image.FromFile(Files.Dir + "Splash.png");
                 Renderer.StartRender();
                 BitmapImage.SetResolution(sizeX * BitmapImage.HorizontalResolution, sizeY * BitmapImage.VerticalResolution);
-                for (int i = 0; i < 5; i++)
+                Stopwatch stopwatch = Stopwatch.StartNew();
+                while(stopwatch.ElapsedMilliseconds < 2000)
                 {
                     Renderer.ScreenGraphics.DrawImage(BitmapImage, (Screen.PrimaryScreen.Bounds.Width / 2) - 200, 200);
-                    Thread.Sleep(100);
+                    Thread.Sleep(50);
                 }
                 Renderer.EndRender();
             });
-            Files.FilesToGame(Config);
+            Files.FilesToGame();
 
             process.Start();
             process.WaitForExit();
-
+            Thread.Sleep(500);
+            Files.FilesToStore();
         }
 
 
@@ -126,6 +131,7 @@ namespace MonoBleedingCube
                         .MoreChoicesText("[grey](Move up and down to reveal more Options)[/]")
                         .AddChoices(new[] {
                             "Add Overwrite", "Add Copy", "Add Zip",
+                            "Open Folder",
                             "Change Splash", "Install File Extension",
                             (Devmode == true ?  "Disable" : "Enable" ) + " DevMode",
                             "Exit"
@@ -157,16 +163,35 @@ namespace MonoBleedingCube
                     catch { MessageBox.Show("Failed To Install File Extension,\n Opening Directory"); Process.Start(new ProcessStartInfo(Directory.GetCurrentDirectory()) { UseShellExecute = true }); }
 
                 }
+                else if (Tab == "Open Folder")
+                {
+                    ProcessStartInfo ProcessStartInfo = new ProcessStartInfo(Path.Combine(Directory.GetCurrentDirectory(), Files.Dir));
+                    ProcessStartInfo.UseShellExecute = true;
+                    Process.Start(ProcessStartInfo);
+                }
             }
         }
 
         public void AddZipFiles()
         {
-            try
+
+            OpenFileDialog openFileDialog = new OpenFileDialog();
+            openFileDialog.ValidateNames = true;
+            openFileDialog.CheckFileExists = true;
+            openFileDialog.CheckPathExists = true;
+            openFileDialog.FileName = Files.Dir + " Selection:";
+            openFileDialog.InitialDirectory = "./";
+            openFileDialog.Filter = "Zip Files | *.zip";
+            openFileDialog.Multiselect = false;
+
+            if (openFileDialog.ShowDialog() == DialogResult.OK)
             {
-                throw new NotImplementedException();
+                try
+                {
+                    File.Move(openFileDialog.FileName, Files.Dir + new FileInfo(openFileDialog.FileName).Name.Replace("./", ""));
+                }
+                catch { }
             }
-            catch (Exception ex) { MessageBox.Show(ex.Message); }
         }
 
 
@@ -255,7 +280,7 @@ namespace MonoBleedingCube
             openFileDialog.ValidateNames = false;
             openFileDialog.CheckFileExists = false;
             openFileDialog.CheckPathExists = true;
-            openFileDialog.FileName = Dir + " Selection:";
+            openFileDialog.FileName = " Selection:";
             openFileDialog.InitialDirectory = "./";
             openFileDialog.Multiselect = true;
 
@@ -275,7 +300,12 @@ namespace MonoBleedingCube
                     {
                         File.Move(selectedPath, Data + $"\\{Dir}\\" + selectedPath);
                     }
-                    catch (Exception e) { MessageBox.Show(e.ToString()); }
+                    catch { }
+                    try
+                    {
+                        Directory.Move(selectedPath, Data + $"\\{Dir}\\" + selectedPath);
+                    }
+                    catch { }
                 }
             }
 

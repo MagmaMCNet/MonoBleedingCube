@@ -14,6 +14,7 @@ using static System.Windows.Forms.VisualStyles.VisualStyleElement.Window;
 using System.Windows.Forms;
 using Color = System.Drawing.Color;
 using MagmaMc.JEF;
+using System.Reflection;
 
 namespace MonoBleedingCube
 {
@@ -60,18 +61,23 @@ namespace MonoBleedingCube
             public static Icon GetIcon(string ImageFilesName) => Icon.FromHandle(GetBitmap(ImageFilesName).GetHicon());
     }
 
+        /*
+         * monobleeedingedge
+         * 
+         * game_data
+         */
         public static List<string> DirectoryConvertList(List<string> SourceList, string Dir)
         {
             List<string> OutputList = new List<string>();
             foreach (string FileName in Directory.GetFiles(Dir))
             {
-                if (!SourceList.Contains(FileName))
-                    OutputList.Add(FileName);
+                if (!SourceList.Contains(FileName.Replace("./", "")))
+                    OutputList.Add(FileName.Replace("./", ""));
             }
             foreach (string Foders in Directory.GetDirectories(Dir))
             {
-                if (!SourceList.Contains(Foders))
-                    OutputList.Add(Foders);
+                if (!SourceList.Contains(Foders.Replace("./", "")))
+                    OutputList.Add(Foders.Replace("./", ""));
             }
             return OutputList;
         }
@@ -79,6 +85,10 @@ namespace MonoBleedingCube
         {
             List<string> Copy_List = new List<string>();
             DirectoryInfo directoryInfo = new DirectoryInfo(sourceDir);
+
+            foreach (string Dirnane in Directory.GetDirectories(directoryInfo.FullName))
+                if (!(Excluted ?? new string[0]).ToList().Contains(new DirectoryInfo(Dirnane).Name.Replace("./", "")))
+                    Copy_List.Add(new DirectoryInfo(Dirnane).Name.Replace("./", ""));
 
             if (!directoryInfo.Exists)
                 throw new DirectoryNotFoundException("Source directory not found: " + directoryInfo.FullName);
@@ -102,6 +112,8 @@ namespace MonoBleedingCube
                 DirectoryInfo[] array = directories;
                 foreach (DirectoryInfo directoryInfo2 in array)
                 {
+                    if ((Excluted ?? new string[0]).ToList().Contains(directoryInfo2.Name.Replace("./", "")))
+                        continue;
                     string destinationDir2 = Path.Combine(destinationDir, directoryInfo2.Name);
                     CopyDirectory(directoryInfo2.FullName, destinationDir2, recursive: true, Excluted);
                 }
@@ -180,6 +192,7 @@ namespace MonoBleedingCube
             }
         }
     }
+
     public class Debugger
     {
         private bool Logging = true;
